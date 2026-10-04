@@ -16,9 +16,10 @@ export async function generateAnswersWithBingWebApi(
   session,
   accessToken,
   sydneyMode = false,
+  configOverride,
 ) {
   const { controller, messageListener, disconnectListener } = setAbortController(port)
-  const config = await getUserConfig()
+  const config = configOverride || (await getUserConfig())
   let modelMode = getModelValue(session)
   if (!modelMode) modelMode = config.modelMode
 
