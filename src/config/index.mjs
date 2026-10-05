@@ -839,7 +839,7 @@ export const defaultConfig = {
   googleApiKey: '',
   xaiApiKey: '',
 
-  bilibiliVideoTranscriptionEnabled: false,
+  videoTranscriptionEnabled: false,
   bilibiliSpeakerIdentificationEnabled: true,
   bilibiliSummaryMaxOutputTokens: DEFAULT_VIDEO_SUMMARY_MAX_OUTPUT_TOKENS,
 
@@ -1206,6 +1206,19 @@ function migrateUserConfig(options) {
   const migrated = { ...options }
   let dirty = false
   const storageKeysToRemove = []
+
+  const hasCanonicalVideoSwitch = typeof migrated.videoTranscriptionEnabled === 'boolean'
+  const hasLegacyVideoSwitch = typeof migrated.bilibiliVideoTranscriptionEnabled === 'boolean'
+  if (!hasCanonicalVideoSwitch) {
+    migrated.videoTranscriptionEnabled = hasLegacyVideoSwitch
+      ? migrated.bilibiliVideoTranscriptionEnabled
+      : defaultConfig.videoTranscriptionEnabled
+    dirty = true
+  }
+  if ('bilibiliVideoTranscriptionEnabled' in migrated) {
+    storageKeysToRemove.push('bilibiliVideoTranscriptionEnabled')
+    dirty = true
+  }
 
   if (migrated.customChatGptWebApiUrl === 'https://chat.openai.com') {
     migrated.customChatGptWebApiUrl = 'https://chatgpt.com'
@@ -2144,6 +2157,7 @@ export async function getUserConfig() {
     ...Object.keys(defaultConfig),
     'claudeApiKey',
     'customClaudeApiUrl',
+    'bilibiliVideoTranscriptionEnabled',
   ])
 
   // Migrate legacy Claude-named keys to Anthropic-named keys.
@@ -2225,6 +2239,9 @@ export async function getUserConfig() {
     }
     if (options.configSchemaVersion !== migrated.configSchemaVersion) {
       payload.configSchemaVersion = migrated.configSchemaVersion
+    }
+    if (options.videoTranscriptionEnabled !== migrated.videoTranscriptionEnabled) {
+      payload.videoTranscriptionEnabled = migrated.videoTranscriptionEnabled
     }
     if (
       JSON.stringify(options.completedBuiltinProviderIdMigrations) !==
